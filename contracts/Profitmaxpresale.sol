@@ -11,7 +11,7 @@ contract Profitmaxpresale is ReentrancyGuard {
     uint256 public constant MIN_STAKING_AMOUNT = 25 ether;
     uint256 public multiplier = 10 ** 18;
 
-    uint256 public constant STAKING_DURATION = 1; //60 minutes; //60 minutes; :todo need to change
+    uint256 public constant STAKING_DURATION = 1 minutes; //60 minutes; //60 minutes; :todo need to change
 
     uint256 public constant MAX_WITHDRAWAL_MULTIPLIER = 3;
     uint256 public constant REWARD_PERCENTAGE_PER_SECOND = 5e15; // 0.5% in 18 decimals
@@ -54,6 +54,8 @@ contract Profitmaxpresale is ReentrancyGuard {
         uint256 star;
         uint256 teamCount;
         uint256 reward;
+        uint256 totalRewardReceived;
+        uint256 starReceived;
     }
 
     mapping(address => UserStaking[]) public userStaking;
@@ -83,6 +85,7 @@ contract Profitmaxpresale is ReentrancyGuard {
     event TokensStaked(address indexed user, uint256 amount, uint256 endTime);
     event RewardsClaimed(address indexed user, uint256 amount);
     event Withdrawal(address indexed user, uint256 amount, uint256 fees);
+    event WithdrawTeamBonus(address indexed userr, uint256 rankReward);
 
     LeadershipRewards[] public leadershipRewards;
 
@@ -110,6 +113,7 @@ contract Profitmaxpresale is ReentrancyGuard {
         uint256 tokenAmount,
         address referrer
     ) public nonReentrant notBlacklisted(msg.sender) {
+        // uint256 stakedAmount = tokenAmount * (10 ** token.decimals());
         require(
             tokenAmount >= MIN_STAKING_AMOUNT,
             "Amount needs to be at least 25 USDT"
@@ -117,7 +121,6 @@ contract Profitmaxpresale is ReentrancyGuard {
         require(msg.sender != admin, "Admin cannot stake");
 
         // Convert token amount to equivalent wei
-        uint256 stakedAmount = tokenAmount * (10 ** token.decimals());
 
         if (parent[msg.sender] == address(0) && msg.sender != referrer) {
             parent[msg.sender] = referrer;
@@ -143,7 +146,7 @@ contract Profitmaxpresale is ReentrancyGuard {
         updateReferralRewards(msg.sender, tokenAmount);
 
         // Calculate daily rewards based on staked amount and update user's daily rewards
-        uint256 dailyRewards = calculateRewardPerMinute(stakedAmount);
+        uint256 dailyRewards = calculateRewardPerMinute(tokenAmount);
         userRewards[msg.sender].dailyRewards += dailyRewards;
 
         // Calculate and add leadership rewards
@@ -246,13 +249,14 @@ contract Profitmaxpresale is ReentrancyGuard {
     function updateRewards(address user) internal {
         UserStaking[] storage stakes = userStaking[user];
         Rewards storage rewards = userRewards[user];
+
         uint256 totalRewards = rewards.totalRewards; // Initialize totalRewards to current total rewards
         for (uint256 i = 0; i < stakes.length; i++) {
             UserStaking storage stake = stakes[i]; // Define storage reference to the current stake
             // Calculate rewards per minute based on staked amount
             uint256 rewardPerMinute = calculateRewardPerMinute(
                 stake.stakedAmount
-            ) / (60 minutes); // Convert it if you change 60 Minutes to 1 minutes accordingly
+            ); //(60 minutes); // Convert it if you change 60 Minutes to 1 minutes accordingly
             // Calculate total rewards since last claim
             uint256 minutesSinceLastClaim = (block.timestamp -
                 stake.lastClaimTime) / 60; // Change according to your time
@@ -267,12 +271,9 @@ contract Profitmaxpresale is ReentrancyGuard {
         // Calculate leadership rewards and add to total rewards
         uint256 earnedLeadershipRewards = calculateLeadershipRewards(user);
         userRewards[user].totalRewards += earnedLeadershipRewards;
-
         totalRewards += earnedLeadershipRewards;
-
         // Update total rewards
         rewards.totalRewards = totalRewards;
-        rewards.dailyRewards += totalRewards; // Update daily rewards as well, if necessary
     }
 
     function checkRewards(
@@ -293,7 +294,6 @@ contract Profitmaxpresale is ReentrancyGuard {
         // Iterate through all stakes made by the user
         for (uint256 i = 0; i < stakes.length; i++) {
             UserStaking storage stake = stakes[i];
-
             // Calculate rewards only for active stakes or stakes with remaining rewards
             if (
                 blockTimestamp < stake.stakingEndTime ||
@@ -301,8 +301,7 @@ contract Profitmaxpresale is ReentrancyGuard {
             ) {
                 // Calculate the time difference since the last claim
                 uint256 minutesSinceLastClaim = (blockTimestamp -
-                    stake.lastClaimTime) / 60;
-
+                    stake.lastClaimTime) / 60; // 60; //60;
                 // Ensure that there is a positive time difference
                 if (minutesSinceLastClaim > 0) {
                     // Calculate rewards per minute based on staked amount
@@ -327,13 +326,11 @@ contract Profitmaxpresale is ReentrancyGuard {
                 }
             }
         }
-
         // Calculate current rewards by subtracting remaining rewards from total rewards
         currentRewards = totalRewards - remainingRewards;
 
         // Calculate previous unclaimed rewards
         previousRewards = totalRewards - currentRewards;
-
         return (
             totalRewards,
             remainingRewards,
@@ -355,6 +352,7 @@ contract Profitmaxpresale is ReentrancyGuard {
             userRewards[msg.sender].totalRewards += levelIncomeRewards;
             levelIncomeAmountClaimed[msg.sender] += levelIncomeRewards;
         }
+
         uint256 earnedLeadershipRewards = calculateLeadershipRewards(
             msg.sender
         );
@@ -363,7 +361,6 @@ contract Profitmaxpresale is ReentrancyGuard {
         claimableRewards += rewards.totalRewards; // Accumulate total rewards
         // Get the user's staked amount
         uint256 stakedAmount = totalInvestedAmount[msg.sender];
-
         // Calculate the maximum withdrawable amount (3x staked amount)
         uint256 maxWithdrawalAmount = stakedAmount * MAX_WITHDRAWAL_MULTIPLIER;
 
@@ -372,23 +369,14 @@ contract Profitmaxpresale is ReentrancyGuard {
             amountInWei <= maxWithdrawalAmount,
             "Requested withdrawal amount exceeds maximum withdrawable amount"
         );
-
-        // uint256 withdrawAmount = amountInWei > claimableRewards ? claimableRewards : amountInWei;
-        uint256 withdrawAmount = amountInWei > claimableRewards
-            ? claimableRewards
-            : amountInWei;
         require(claimableRewards >= amountInWei, "Not enough rewards to claim");
-
-        // rewards.totalRewards -= (withdrawAmount - earnedLeadershipRewards - levelIncomeRewards);
-
-        uint256 fee = (withdrawAmount * WITHDRAWAL_FEE_PERCENTAGE) / 100; // Calculate the fee (10% of the amount)
-        token.transfer(msg.sender, withdrawAmount - fee);
+        uint256 fee = (amountInWei * WITHDRAWAL_FEE_PERCENTAGE) / 100; // Calculate the fee (10% of the amount)
+        token.transfer(msg.sender, amountInWei - fee);
         token.transfer(admin, fee);
         // Update total rewards after withdrawal
-        totalRewardWithdraw[msg.sender] += withdrawAmount;
-        userRewards[msg.sender].totalRewards -= withdrawAmount;
-
-        emit RewardsClaimed(msg.sender, withdrawAmount);
+        totalRewardWithdraw[msg.sender] += amountInWei;
+        userRewards[msg.sender].totalRewards -= amountInWei;
+        emit RewardsClaimed(msg.sender, amountInWei);
     }
 
     function calculateRewards(
@@ -490,9 +478,11 @@ contract Profitmaxpresale is ReentrancyGuard {
                         userStaking[referaluser].length - 1
                     ].lastClaimTime;
                 if (secondsSinceLastClaim < 60) {
+                    //60
+                    //60
                     break;
                 }
-                uint256 minutesSinceLastClaim = secondsSinceLastClaim / 60;
+                uint256 minutesSinceLastClaim = secondsSinceLastClaim / 60; //60; //60;
 
                 // Calculate rewards per second
                 uint256 rewardPerSecond = (stakedAmount *
@@ -635,7 +625,7 @@ contract Profitmaxpresale is ReentrancyGuard {
 
     function teamBonus(
         address user
-    ) external view returns (uint256 rankReward, uint256 teamCount) {
+    ) public view returns (uint256 rankReward, uint256 teamCount) {
         uint256 totalTeamCount = levelCountUsers[1][user]; // Retrieve direct team count
 
         // Add indirect referrals to the total team count
@@ -672,5 +662,38 @@ contract Profitmaxpresale is ReentrancyGuard {
             teamBonuses[user][rank].reward,
             teamBonuses[user][rank].teamCount
         );
+    }
+
+    function withdrawable(address user) public view returns (uint256) {
+        uint256 totalRewards = userRewards[user].totalRewards; // Initialize totalRewards to current total rewards
+        for (uint256 i = 0; i < userStaking[user].length; i++) {
+            uint256 rewardPerMinute = calculateRewardPerMinute(
+                userStaking[user][i].stakedAmount
+            ) / 1 minutes; //(60 minutes); // Convert it if you change 60 Minutes to 1 minutes accordingly
+            uint256 minutesSinceLastClaim = (block.timestamp -
+                userStaking[user][i].lastClaimTime); //60; // Change according to your time
+            uint256 rewardsSinceLastClaim = rewardPerMinute *
+                minutesSinceLastClaim;
+            totalRewards += rewardsSinceLastClaim;
+        }
+        uint256 earnedLeadershipRewards = calculateLeadershipRewards(user);
+        totalRewards += earnedLeadershipRewards;
+        return totalRewards;
+    }
+
+    function withdrawTeamBonus() public {
+        (uint256 rankReward, uint256 teamCount) = teamBonus(msg.sender);
+        LeadershipRewards storage leadersR = teamBonuses[msg.sender][1];
+        require(
+            rankReward > leadersR.starReceived,
+            "No any Withdrawl Team Bonus Available"
+        );
+        uint256 fee = (rankReward * WITHDRAWAL_FEE_PERCENTAGE) / 100; // Calculate the fee (10% of the amount)
+        token.transfer(msg.sender, rankReward - fee);
+        token.transfer(admin, fee);
+        totalRewardWithdraw[msg.sender] += rankReward;
+        leadersR.totalRewardReceived += rankReward;
+        leadersR.starReceived = rankReward;
+        emit WithdrawTeamBonus(msg.sender, rankReward);
     }
 }
