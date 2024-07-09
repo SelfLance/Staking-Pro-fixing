@@ -4,10 +4,11 @@ const { ethers } = require("hardhat");
 
 describe("Profitmaxpresale Contract", function () {
   let profitmaxpresale, token;
-  let owner, user1, user2;
+  let owner, user1, user2, user3, user4, user5, user6;
 
   beforeEach(async function () {
-    [owner, user1, user2] = await ethers.getSigners();
+    [owner, user1, user2, user3, user4, user5, user6] =
+      await ethers.getSigners();
 
     // Deploy the token contract
     const Token = await ethers.getContractFactory("ERC20Token"); // Replace with actual token contract name
@@ -29,6 +30,13 @@ describe("Profitmaxpresale Contract", function () {
 
     // Transfer some tokens to user1
     await token.transfer(user1.address, "10000000000000000000000");
+    await token.transfer(user2.address, "10000000000000000000000");
+    await token.transfer(user3.address, "10000000000000000000000");
+
+    await token.transfer(user4.address, "10000000000000000000000");
+    await token.transfer(user5.address, "10000000000000000000000");
+    await token.transfer(user6.address, "10000000000000000000000");
+
     console.log(
       "Balance of User 1 Afeter Transfer Token: ",
       await token.balanceOf(user1.address)
@@ -40,7 +48,7 @@ describe("Profitmaxpresale Contract", function () {
     // Stake tokens
     await profitmaxpresale
       .connect(user1)
-      .stakeTokens("5000000000000000000000", owner.address);
+      .stakeTokens("500000000000000000000", owner.address);
   });
 
   it("should allow users to stake tokens", async function () {
@@ -73,7 +81,7 @@ describe("Profitmaxpresale Contract", function () {
     await network.provider.send("evm_increaseTime", [time]);
     await network.provider.send("evm_mine");
   }
-  it.only("should calculate rewards correctly and allow withdrawal after some time", async function () {
+  it("should calculate rewards correctly and allow withdrawal after some time", async function () {
     // await sleep(61000); // Update rewards
     // Check rewards
     await advanceTimeAndBlock(240);
@@ -101,11 +109,97 @@ describe("Profitmaxpresale Contract", function () {
     // Check final balance
     expect(finalBalance).to.be.gt(initialBalance);
   });
-
-  it("should calculate rewards correctly and allow withdrawal after some time", async function () {
+  it("Should Multi Stacking and Show Data", async function () {
     // await sleep(61000); // Update rewards
+    // Check rewards
+    await advanceTimeAndBlock(240);
 
-    const rewards = await profitmaxpresale.withdrawable(user1.address);
-    console.log("Total Reward Received: ", rewards);
+    await profitmaxpresale
+      .connect(user1)
+      .stakeTokens("100000000000000000000", owner.address);
+    // });
+    await profitmaxpresale
+      .connect(user1)
+      .stakeTokens("200000000000000000000", owner.address);
+    // });
+    // Retrieve the stakes for user1
+    const stakes = await profitmaxpresale.getUserStakes(user1.address);
+    //
+    console.log("Stakes Data Coming from 3 stakes: ", stakes);
+    // Check final balance
+    // expect(finalBalance).to.be.gt(initialBalance);
+  });
+
+  it.only("Should Show Only Direct Referer Only ", async function () {
+    // First
+    await token
+      .connect(user1)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+
+    await profitmaxpresale
+      .connect(user1)
+      .stakeTokens("100000000000000000000", owner.address);
+    // });
+    // Second
+    await token
+      .connect(user2)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user2)
+      .stakeTokens("200000000000000000000", user1.address);
+    // });
+    // Third
+    await token
+      .connect(user3)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user3)
+      .stakeTokens("200000000000000000000", user1.address);
+    // });
+    // Fourth
+    await token
+      .connect(user4)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user4)
+      .stakeTokens("200000000000000000000", user1.address);
+    // });
+    //Fifth
+    await token
+      .connect(user5)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user5)
+      .stakeTokens("200000000000000000000", user2.address);
+    // });
+    // Sixth
+    await token
+      .connect(user6)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user6)
+      .stakeTokens("200000000000000000000", user2.address);
+    // });
+    await advanceTimeAndBlock(240);
+
+    console.log("Its not reached at this level");
+    await profitmaxpresale.connect(user1).withdraw(10);
+    console.log("It s withdrawl Called: ");
+    console.log(
+      "Referer for Owner: ",
+      await profitmaxpresale.showAllDirectChild(owner.address)
+    );
+    console.log(
+      "Referer for User1: ",
+      await profitmaxpresale.showAllDirectChild(user1.address)
+    );
+    console.log(
+      "Referer for User2: ",
+      await profitmaxpresale.showAllDirectChild(user2.address)
+    );
+    console.log(
+      "Referer for User 3: ",
+      await profitmaxpresale.showAllDirectChild(user3.address)
+    );
   });
 });
