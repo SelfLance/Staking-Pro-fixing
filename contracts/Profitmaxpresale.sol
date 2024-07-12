@@ -594,12 +594,12 @@ contract Profitmaxpresale is ReentrancyGuard {
         return (_amount * _hours * 10) / 1000; // Example: 1% hourly reward
     }
 
-    function updateLevelIncome(address _user) internal {
+    function updateLevelIncome(address _user) internal returns (uint256) {
         User storage user = users[_user];
 
         // Calculate the elapsed time since the last update
         uint256 elapsedHours = (block.timestamp - user.lastUpdate) / 1 hours;
-        if (elapsedHours == 0) return;
+        if (elapsedHours == 0) return 0;
 
         // Calculate the hourly reward
         uint256 hourlyReward = calculateHourlyReward(
@@ -613,6 +613,7 @@ contract Profitmaxpresale is ReentrancyGuard {
         uint256 remainingReward = hourlyReward;
         address currentReferrer = user.referrer;
         uint256 level = 1;
+        uint256 reward;
 
         while (
             currentReferrer != address(0) && level <= 20 && remainingReward > 0
@@ -624,11 +625,13 @@ contract Profitmaxpresale is ReentrancyGuard {
                     levelPercentages[level - 1]) / 1000;
                 referrer.levelIncomes.push(levelIncome);
                 remainingReward -= levelIncome;
+                reward += levelIncome;
             }
 
             currentReferrer = referrer.referrer;
             level++;
         }
+        return reward;
     }
 
     function setIndirectUsersRecursive(
