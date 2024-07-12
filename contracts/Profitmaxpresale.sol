@@ -634,6 +634,87 @@ contract Profitmaxpresale is ReentrancyGuard {
         return reward;
     }
 
+    function calculateReward(address user) public view returns (uint256) {
+        uint256 totalReward = 0;
+        User storage user = users[user];
+
+        uint256 hourlyRewardRate = user.stakedAmount / 24; // Assuming 25 tokens yield rewards daily, so hourly reward rate
+
+        for (uint256 i = 0; i < LEVELS; i++) {
+            address referrer = getNthLevelReferrer(user, i);
+            if (referrer == address(0) || users[referrer].level <= i) {
+                break;
+            }
+            uint256 reward = 0;
+            for (uint256 j = 0; j < stakes[user].length; j++) {
+                Stake memory stake = stakes[user][j];
+                if (stake.timestamp > users[referrer].lastWithdrawn) {
+                    uint256 hoursStaked = (block.timestamp - stake.timestamp) /
+                        REWARD_INTERVAL;
+                    reward +=
+                        (hoursStaked * hourlyRewardRate * levelRewards[i]) /
+                        100;
+                }
+            }
+            totalReward += reward;
+        }
+        return totalReward;
+    }
+
+    function getNthLevelReferrer(
+        address user,
+        uint256 level
+    ) internal view returns (address) {
+        address referrer = user;
+        for (uint256 i = 0; i <= level; i++) {
+            referrer = users[referrer].referrer;
+            if (referrer == address(0)) {
+                return address(0);
+            }
+        }
+        return referrer;
+    }
+
+    function getLevelIncome(address _user) public view returns (uint256) {
+        User storage user = users[_user];
+
+        // Calculate the elapsed time since the last update
+        uint256 elapsedHours = (block.timestamp - user.lastUpdate) / 1 hours;
+        if (elapsedHours == 0) return 0;
+
+        // Calculate the hourly reward
+        uint256 hourlyReward = calculateHourlyReward(
+            user.stakedTokens,
+            elapsedHours
+        );
+
+        // Update the last update timestamp
+        // user.lastUpdate = block.timestamp;
+
+        uint256 remainingReward = hourlyReward;
+        address currentReferrer = user.referrer;
+        uint256 level = 1;
+        uint256 reward;
+
+        while (
+            currentReferrer != address(0) && level <= 20 && remainingReward > 0
+        ) {
+            User storage referrer = users[currentReferrer];
+
+            if (referrer.directReferrals >= level) {
+                uint256 levelIncome = (hourlyReward *
+                    levelPercentages[level - 1]) / 1000;
+                referrer.levelIncomes.push(levelIncome);
+                remainingReward -= levelIncome;
+                reward += levelIncome;
+            }
+
+            currentReferrer = referrer.referrer;
+            level++;
+        }
+        return reward;
+    }
+
     function setIndirectUsersRecursive(
         address _user,
         address _referrer
