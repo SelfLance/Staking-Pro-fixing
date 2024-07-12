@@ -78,9 +78,43 @@ contract Profitmaxpresale is ReentrancyGuard {
         public teamBonuses;
     // mapping(uint256 => LeadershipReward) public leadershipRewards;
     mapping(address => UserStakes[]) userStakes; // This is for Stackes Push to get list of all stakes with detail
+
+    // Assume a structure for user data that includes referrals and levels unlocked
+    struct User {
+        uint256 stakedTokens;
+        address referrer;
+        uint256 directReferrals;
+        uint256[] levelIncomes;
+        uint256 stakeTimestamp;
+        uint256 lastUpdate;
+    }
+
+    mapping(address => User) public users;
+    uint256[] public levelPercentages = [
+        250,
+        100,
+        75,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        25,
+        25,
+        25,
+        25,
+        25,
+        10,
+        10,
+        10,
+        10,
+        10
+    ]; // 20 levels
+
     // Mapping to track last salary distribution time for each user
     mapping(address => uint256) public lastSalaryDistributionTime;
-
     event SalaryIncomeClaimed(address indexed user, uint256 amount);
     event TokensStaked(address indexed user, uint256 amount, uint256 endTime);
     event RewardsClaimed(address indexed user, uint256 amount);
@@ -160,6 +194,18 @@ contract Profitmaxpresale is ReentrancyGuard {
                 referrer: referrer
             })
         );
+        User storage user = users[msg.sender];
+
+        user.stakedTokens += tokenAmount;
+        user.stakeTimestamp = block.timestamp;
+        user.lastUpdate = block.timestamp;
+
+        if (user.referrer == address(0) && referrer != msg.sender) {
+            user.referrer = referrer;
+            users[referrer].directReferrals += 1;
+        }
+
+        updateLevelIncome(msg.sender);
     }
 
     function calculateRewardPerMinute(
@@ -421,122 +467,168 @@ contract Profitmaxpresale is ReentrancyGuard {
         return false;
     }
 
-    function updateLevelIncome(address user) public view returns (uint256) {
-        address[] memory currentReferrer = showAllDirectChild(user);
-        uint256 totalAmount = 0;
-        for (uint256 i = 0; i < currentReferrer.length; i++) {
-            uint256 stakingOfReferrer = userStakes[currentReferrer[i]][0]
-                .stakedAmount;
-            uint256 secondsSinceLastClaim = (block.timestamp -
-                userStaking[currentReferrer[i]][0].lastClaimTime) / 60; // Claim Reward per minutes;
+    // function updateLevelIncome(address user) public view returns (uint256) {
+    //     address[] memory currentReferrer = showAllDirectChild(user);
+    //     uint256 totalAmount = 0;
+    //     uint256 currentReferrerLength = 20;
 
-            if (i == 0 && secondsSinceLastClaim > 0) {
-                totalAmount =
-                    ((stakingOfReferrer * 25) / 100) *
-                    secondsSinceLastClaim;
+    //     for (uint256 i = 0; i < currentReferrer.length; i++) {
+    //         uint256 stakingOfReferrer = userStakes[currentReferrer[i]][0]
+    //             .stakedAmount;
+    //         uint256 secondsSinceLastClaim = (block.timestamp -
+    //             userStaking[currentReferrer[i]][0].lastClaimTime) / 60; // Claim Reward per minutes;
+    //         stakingOfReferrer = calculateRewardPerMinute(stakingOfReferrer);
+    //         if (i == 0 && secondsSinceLastClaim > 0) {
+    //             totalAmount =
+    //                 ((stakingOfReferrer * 25) / 100) *
+    //                 secondsSinceLastClaim;
+    //         }
+    //         if (i == 1 && secondsSinceLastClaim > 0) {
+    //             totalAmount +=
+    //                 ((stakingOfReferrer * 10) / 100) *
+    //                 secondsSinceLastClaim;
+    //         }
+    //         if (i == 2 && secondsSinceLastClaim > 0) {
+    //             totalAmount +=
+    //                 ((stakingOfReferrer * 7) / 100) *
+    //                 secondsSinceLastClaim;
+    //         }
+    //         if (i > 2 && i < 11 && secondsSinceLastClaim > 0) {
+    //             totalAmount +=
+    //                 ((stakingOfReferrer * 5) / 100) *
+    //                 secondsSinceLastClaim;
+    //         }
+    //         if (i > 10 && i < 16 && secondsSinceLastClaim > 0) {
+    //             totalAmount +=
+    //                 ((stakingOfReferrer * 2) / 100) *
+    //                 secondsSinceLastClaim;
+    //         }
+    //         if (i > 15 && i < 21 && secondsSinceLastClaim > 0) {
+    //             totalAmount +=
+    //                 ((stakingOfReferrer * 1) / 100) *
+    //                 secondsSinceLastClaim;
+    //         }
+    //     }
+    //     // totalRewards += totalAmount;
+    //     return totalAmount;
+
+    //     // uint256 stakedAmount = 0; // Initialize stakedAmount to zero
+    //     // uint256 levelIncome;
+    //     // uint256 totalReferals = currentReferrer.length;
+    //     // if (totalReferals == 0) {
+    //     //     return 0;
+    //     // } else if (totalReferals >= 1) {
+    //     //     if (totalReferals == 1) {
+    //     //         levelIncome = 25; //(stakedAmount * 50) / 100; // 50% for 1st level
+    //     //     } else if (totalReferals == 2) {
+    //     //         levelIncome = 10; //(stakedAmount * 25) / 100; // 25% for 2nd level
+    //     //     } else if (totalReferals == 3) {
+    //     //         levelIncome = 7; //(stakedAmount * 10) / 100; // 10% for 3rd level
+    //     //     } else if (totalReferals >= 4 && totalReferals <= 10) {
+    //     //         levelIncome = 5; //(stakedAmount * 5) / 100; // 5% for 4th and 10th level
+    //     //     } else if (totalReferals >= 11 && totalReferals <= 15) {
+    //     //         levelIncome = 2; //(stakedAmount * 4) / 100; // 4% for 11th to 15th level
+    //     //     } else if (totalReferals >= 16 && totalReferals <= 20) {
+    //     //         levelIncome = 1; //(stakedAmount * 3) / 100; // 3% for 16th to 20th level
+    //     //     }
+    //     // }
+
+    //     // uint256 blockTimestamp = block.timestamp;
+    //     // uint256 totalRewards = 0;
+
+    //     // for (uint i = 0; i < currentReferrer.length; i++) {
+    //     //     address referaluser = currentReferrer[i];
+
+    //     //     // Check if user has any staking history
+    //     //     if (userStaking[referaluser].length > 0) {
+    //     //         stakedAmount = userStaking[referaluser][
+    //     //             userStaking[referaluser].length - 1
+    //     //         ].stakedAmount; // Use last staking amount
+
+    //     //         uint256 secondsSinceLastClaim = blockTimestamp -
+    //     //             userStaking[referaluser][
+    //     //                 userStaking[referaluser].length - 1
+    //     //             ].lastClaimTime;
+    //     //         if (secondsSinceLastClaim < 60) {
+    //     //             //60
+    //     //             //60
+    //     //             break;
+    //     //         }
+    //     //         uint256 minutesSinceLastClaim = secondsSinceLastClaim / 60; //60; //60;
+
+    //     //         // Calculate rewards per second
+    //     //         uint256 rewardPerSecond = (stakedAmount *
+    //     //             REWARD_PERCENTAGE_PER_SECOND) / 1e18;
+    //     //         // Calculate total rewards since last claim
+    //     //         uint256 rewardsSinceLastClaim = rewardPerSecond *
+    //     //             minutesSinceLastClaim;
+    //     //         // Ensure total rewards excluding rank rewards do not exceed 3x
+    //     //         if (
+    //     //             rewardsSinceLastClaim >
+    //     //             3 *
+    //     //                 userStaking[referaluser][
+    //     //                     userStaking[referaluser].length - 1
+    //     //                 ].stakedAmount
+    //     //         ) {
+    //     //             rewardsSinceLastClaim = (3 *
+    //     //                 userStaking[referaluser][
+    //     //                     userStaking[referaluser].length - 1
+    //     //                 ].stakedAmount);
+    //     //         }
+
+    //     //         // Add rewards since last claim to total rewards
+    //     //         totalRewards += rewardsSinceLastClaim;
+    //     //     }
+    //     // }
+
+    //     // return ((((levelIncome * totalRewards) / 100) +
+    //     //     levelIncomePreviousStage[msg.sender]) -
+    //     //     levelIncomeAmountClaimed[msg.sender]);
+    //     // // userRewards[user].totalRewards += (levelIncome * 50) / 100;
+    // }
+    function calculateHourlyReward(
+        uint256 _amount,
+        uint256 _hours
+    ) internal pure returns (uint256) {
+        // Implement your hourly reward calculation logic here
+        return (_amount * _hours * 10) / 1000; // Example: 1% hourly reward
+    }
+
+    function updateLevelIncome(address _user) internal {
+        User storage user = users[_user];
+
+        // Calculate the elapsed time since the last update
+        uint256 elapsedHours = (block.timestamp - user.lastUpdate) / 1 hours;
+        if (elapsedHours == 0) return;
+
+        // Calculate the hourly reward
+        uint256 hourlyReward = calculateHourlyReward(
+            user.stakedTokens,
+            elapsedHours
+        );
+
+        // Update the last update timestamp
+        user.lastUpdate = block.timestamp;
+
+        uint256 remainingReward = hourlyReward;
+        address currentReferrer = user.referrer;
+        uint256 level = 1;
+
+        while (
+            currentReferrer != address(0) && level <= 20 && remainingReward > 0
+        ) {
+            User storage referrer = users[currentReferrer];
+
+            if (referrer.directReferrals >= level) {
+                uint256 levelIncome = (hourlyReward *
+                    levelPercentages[level - 1]) / 1000;
+                referrer.levelIncomes.push(levelIncome);
+                remainingReward -= levelIncome;
             }
-            if (i == 1 && secondsSinceLastClaim > 0) {
-                totalAmount +=
-                    ((stakingOfReferrer * 10) / 100) *
-                    secondsSinceLastClaim;
-            }
-            if (i == 2 && secondsSinceLastClaim > 0) {
-                totalAmount +=
-                    ((stakingOfReferrer * 7) / 100) *
-                    secondsSinceLastClaim;
-            }
-            if (i > 2 && i < 11 && secondsSinceLastClaim > 0) {
-                totalAmount +=
-                    ((stakingOfReferrer * 5) / 100) *
-                    secondsSinceLastClaim;
-            }
-            if (i > 10 && i < 16 && secondsSinceLastClaim > 0) {
-                totalAmount +=
-                    ((stakingOfReferrer * 2) / 100) *
-                    secondsSinceLastClaim;
-            }
-            if (i > 15 && i < 21 && secondsSinceLastClaim > 0) {
-                totalAmount +=
-                    ((stakingOfReferrer * 1) / 100) *
-                    secondsSinceLastClaim;
-            }
+
+            currentReferrer = referrer.referrer;
+            level++;
         }
-        // totalRewards += totalAmount;
-        return totalAmount;
-
-        // uint256 stakedAmount = 0; // Initialize stakedAmount to zero
-        // uint256 levelIncome;
-        // uint256 totalReferals = currentReferrer.length;
-        // if (totalReferals == 0) {
-        //     return 0;
-        // } else if (totalReferals >= 1) {
-        //     if (totalReferals == 1) {
-        //         levelIncome = 25; //(stakedAmount * 50) / 100; // 50% for 1st level
-        //     } else if (totalReferals == 2) {
-        //         levelIncome = 10; //(stakedAmount * 25) / 100; // 25% for 2nd level
-        //     } else if (totalReferals == 3) {
-        //         levelIncome = 7; //(stakedAmount * 10) / 100; // 10% for 3rd level
-        //     } else if (totalReferals >= 4 && totalReferals <= 10) {
-        //         levelIncome = 5; //(stakedAmount * 5) / 100; // 5% for 4th and 10th level
-        //     } else if (totalReferals >= 11 && totalReferals <= 15) {
-        //         levelIncome = 2; //(stakedAmount * 4) / 100; // 4% for 11th to 15th level
-        //     } else if (totalReferals >= 16 && totalReferals <= 20) {
-        //         levelIncome = 1; //(stakedAmount * 3) / 100; // 3% for 16th to 20th level
-        //     }
-        // }
-
-        // uint256 blockTimestamp = block.timestamp;
-        // uint256 totalRewards = 0;
-
-        // for (uint i = 0; i < currentReferrer.length; i++) {
-        //     address referaluser = currentReferrer[i];
-
-        //     // Check if user has any staking history
-        //     if (userStaking[referaluser].length > 0) {
-        //         stakedAmount = userStaking[referaluser][
-        //             userStaking[referaluser].length - 1
-        //         ].stakedAmount; // Use last staking amount
-
-        //         uint256 secondsSinceLastClaim = blockTimestamp -
-        //             userStaking[referaluser][
-        //                 userStaking[referaluser].length - 1
-        //             ].lastClaimTime;
-        //         if (secondsSinceLastClaim < 60) {
-        //             //60
-        //             //60
-        //             break;
-        //         }
-        //         uint256 minutesSinceLastClaim = secondsSinceLastClaim / 60; //60; //60;
-
-        //         // Calculate rewards per second
-        //         uint256 rewardPerSecond = (stakedAmount *
-        //             REWARD_PERCENTAGE_PER_SECOND) / 1e18;
-        //         // Calculate total rewards since last claim
-        //         uint256 rewardsSinceLastClaim = rewardPerSecond *
-        //             minutesSinceLastClaim;
-        //         // Ensure total rewards excluding rank rewards do not exceed 3x
-        //         if (
-        //             rewardsSinceLastClaim >
-        //             3 *
-        //                 userStaking[referaluser][
-        //                     userStaking[referaluser].length - 1
-        //                 ].stakedAmount
-        //         ) {
-        //             rewardsSinceLastClaim = (3 *
-        //                 userStaking[referaluser][
-        //                     userStaking[referaluser].length - 1
-        //                 ].stakedAmount);
-        //         }
-
-        //         // Add rewards since last claim to total rewards
-        //         totalRewards += rewardsSinceLastClaim;
-        //     }
-        // }
-
-        // return ((((levelIncome * totalRewards) / 100) +
-        //     levelIncomePreviousStage[msg.sender]) -
-        //     levelIncomeAmountClaimed[msg.sender]);
-        // // userRewards[user].totalRewards += (levelIncome * 50) / 100;
     }
 
     function setIndirectUsersRecursive(

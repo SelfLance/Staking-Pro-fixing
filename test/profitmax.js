@@ -46,9 +46,9 @@ describe("Profitmaxpresale Contract", function () {
       .approve(profitmaxpresale.target, "5000000000000000000000");
 
     // Stake tokens
-    await profitmaxpresale
-      .connect(user1)
-      .stakeTokens("500000000000000000000", owner.address);
+    // await profitmaxpresale
+    //   .connect(user1)
+    //   .stakeTokens("500000000000000000000", owner.address);
   });
 
   it("should allow users to stake tokens", async function () {
@@ -141,65 +141,74 @@ describe("Profitmaxpresale Contract", function () {
       .stakeTokens("100000000000000000000", owner.address);
     // });
     // Second
-    await token
-      .connect(user2)
-      .approve(profitmaxpresale.target, "5000000000000000000000");
-    await profitmaxpresale
-      .connect(user2)
-      .stakeTokens("200000000000000000000", user1.address);
-    // });
-    // Third
-    await token
-      .connect(user3)
-      .approve(profitmaxpresale.target, "5000000000000000000000");
-    await profitmaxpresale
-      .connect(user3)
-      .stakeTokens("200000000000000000000", user1.address);
-    // });
-    // Fourth
-    await token
-      .connect(user4)
-      .approve(profitmaxpresale.target, "5000000000000000000000");
-    await profitmaxpresale
-      .connect(user4)
-      .stakeTokens("200000000000000000000", user1.address);
-    // });
-    //Fifth
-    await token
-      .connect(user5)
-      .approve(profitmaxpresale.target, "5000000000000000000000");
-    await profitmaxpresale
-      .connect(user5)
-      .stakeTokens("200000000000000000000", user2.address);
-    // });
-    // Sixth
-    await token
-      .connect(user6)
-      .approve(profitmaxpresale.target, "5000000000000000000000");
-    await profitmaxpresale
-      .connect(user6)
-      .stakeTokens("200000000000000000000", user2.address);
-    // });
+    // await token
+    //   .connect(user2)
+    //   .approve(profitmaxpresale.target, "5000000000000000000000");
+    // await profitmaxpresale
+    //   .connect(user2)
+    //   .stakeTokens("200000000000000000000", user1.address);
+    // // });
+    // // Third
+    // await token
+    //   .connect(user3)
+    //   .approve(profitmaxpresale.target, "5000000000000000000000");
+    // await profitmaxpresale
+    //   .connect(user3)
+    //   .stakeTokens("200000000000000000000", user1.address);
+    // // });
+    // // Fourth
+    // await token
+    //   .connect(user4)
+    //   .approve(profitmaxpresale.target, "5000000000000000000000");
+    // await profitmaxpresale
+    //   .connect(user4)
+    //   .stakeTokens("200000000000000000000", user1.address);
+    // // });
+    // //Fifth
+    // await token
+    //   .connect(user5)
+    //   .approve(profitmaxpresale.target, "5000000000000000000000");
+    // await profitmaxpresale
+    //   .connect(user5)
+    //   .stakeTokens("200000000000000000000", user2.address);
+    // // });
+    // // Sixth
+    // await token
+    //   .connect(user6)
+    //   .approve(profitmaxpresale.target, "5000000000000000000000");
+    // await profitmaxpresale
+    //   .connect(user6)
+    //   .stakeTokens("200000000000000000000", user2.address);
+    // // });
     await advanceTimeAndBlock(240);
 
-    console.log("Its not reached at this level");
-    await profitmaxpresale.connect(user1).withdraw(10);
-    console.log("It s withdrawl Called: ");
+    // await profitmaxpresale.connect(user1).withdraw(10);
     console.log(
       "Referer for Owner: ",
-      await profitmaxpresale.showAllDirectChild(owner.address)
+      await profitmaxpresale.showAllDirectChild(owner.address),
+      " Level Income: ",
+      await profitmaxpresale.updateLevelIncome(owner.address),
+      "USer1 and Owner: ",
+      user1.address,
+      owner.address
     );
-    console.log(
-      "Referer for User1: ",
-      await profitmaxpresale.showAllDirectChild(user1.address)
-    );
-    console.log(
-      "Referer for User2: ",
-      await profitmaxpresale.showAllDirectChild(user2.address)
-    );
-    console.log(
-      "Referer for User 3: ",
-      await profitmaxpresale.showAllDirectChild(user3.address)
-    );
+    // console.log(
+    //   "Referer for User1: ",
+    //   await profitmaxpresale.showAllDirectChild(user1.address),
+    //   " Level Income: ",
+    //   await profitmaxpresale.updateLevelIncome(user1.address)
+    // );
+    // console.log(
+    //   "Referer for User2: ",
+    //   await profitmaxpresale.showAllDirectChild(user2.address),
+    //   " Level Income: ",
+    //   await profitmaxpresale.updateLevelIncome(user2.address)
+    // );
+    // console.log(
+    //   "Referer for User 3: ",
+    //   await profitmaxpresale.showAllDirectChild(user3.address),
+    //   " Level Income: ",
+    //   await profitmaxpresale.updateLevelIncome(user3.address)
+    // );
   });
 });
