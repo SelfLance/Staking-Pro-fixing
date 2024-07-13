@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract Profitmaxpresale is ReentrancyGuard {
+contract Profitmaxpresale1 is ReentrancyGuard {
     address public admin;
     ERC20 public token;
 
@@ -85,11 +85,12 @@ contract Profitmaxpresale is ReentrancyGuard {
         address referrer;
         uint256 directReferrals;
         uint256[] levelIncomes;
+        uint256[] lastStakeUpdate;
         uint256 stakeTimestamp;
         uint256 lastUpdate;
         uint256 level;
         uint256 leafNo;
-        uint256 levelIncomeReceived;
+        uint256[] levelIncomeReceived;
         uint256 rewardPerMinute;
     }
 
@@ -217,15 +218,16 @@ contract Profitmaxpresale is ReentrancyGuard {
     function updateLevelIncome(address _user) public view returns (uint256) {
         User memory user = users[_user];
         uint256 totalReward;
-        // for (uint i = 0; i < user.level; i++) {
-        uint256 stakesTime = (block.timestamp - user.lastUpdate) / 60; // Per Minute
+        uint256 i = 1;
+        for (i = 1; i < user.level; i++) {}
+        uint256 stakesTime = (block.timestamp - user.lastStakeUpdate[i - 1]) /
+            60; // Per Minute
         if (stakesTime > 0) {
-            uint256 rewardPerMinute = user.rewardPerMinute;
+            uint256 rewardPerMinute = user.levelIncomes[i - 1];
             totalReward += (rewardPerMinute * stakesTime);
         }
-        totalReward += user.levelIncomeReceived;
+        totalReward += user.levelIncomeReceived[i - 1];
         return totalReward;
-        // }
     }
 
     function updateLevelIncome(
@@ -245,13 +247,18 @@ contract Profitmaxpresale is ReentrancyGuard {
             if (user1.rewardPerMinute > 0) {
                 uint256 timeToMins = (block.timestamp - lastUpdates) / 60;
                 if (timeToMins > 0)
-                    user1.levelIncomeReceived +=
+                    user1.levelIncomeReceived[i - 1] +=
                         timeToMins *
                         user1.rewardPerMinute;
             }
             user1.lastUpdate = block.timestamp;
-            uint256 reward = (rewardPerMinute * levelPercentages[level]) / 1000;
-            users[user.referrer].rewardPerMinute += reward;
+
+            uint256 reward = (rewardPerMinute * levelPercentages[level - 1]) /
+                1000;
+            users[user.referrer].levelIncomes[i] += reward;
+            users[user.referrer].lastStakeUpdate[i] = block.timestamp;
+            // users[user.referrer].rewardPerMinute += reward;
+
             user = users[user.referrer];
         }
     }

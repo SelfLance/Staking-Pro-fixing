@@ -141,20 +141,20 @@ describe("Profitmaxpresale Contract", function () {
       .stakeTokens("100000000000000000000", owner.address);
     // });
     // Second
-    // await token
-    //   .connect(user2)
-    //   .approve(profitmaxpresale.target, "5000000000000000000000");
-    // await profitmaxpresale
-    //   .connect(user2)
-    //   .stakeTokens("200000000000000000000", user1.address);
-    // // });
+    await token
+      .connect(user2)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user2)
+      .stakeTokens("200000000000000000000", user1.address);
+    // });
     // // Third
-    // await token
-    //   .connect(user3)
-    //   .approve(profitmaxpresale.target, "5000000000000000000000");
-    // await profitmaxpresale
-    //   .connect(user3)
-    //   .stakeTokens("200000000000000000000", user1.address);
+    await token
+      .connect(user3)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user3)
+      .stakeTokens("200000000000000000000", user1.address);
     // // });
     // // Fourth
     // await token
