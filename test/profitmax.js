@@ -184,7 +184,7 @@ describe("Profitmaxpresale Contract", function () {
       "Its Reward before Time out: ",
       await profitmaxpresale.updateLevelIncome(user1.address)
     );
-    // // Seven
+    // // // Seven
     await token
       .connect(user7)
       .approve(profitmaxpresale.target, "5000000000000000000000");
@@ -229,10 +229,10 @@ describe("Profitmaxpresale Contract", function () {
       await profitmaxpresale.updateLevelIncome(owner.address)
     );
 
-    console.log(
-      "User 2  Level Income : ",
-      await profitmaxpresale.updateLevelIncome(user2.address)
-    );
+    // console.log(
+    //   "User 2  Level Income : ",
+    //   await profitmaxpresale.updateLevelIncome(user2.address)
+    // );
     // await profitmaxpresale.connect(user1).withdraw(10);
 
     // console.log(
