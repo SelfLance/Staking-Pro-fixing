@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+// import "hardhat/console.sol";
+
 contract Profitmaxpresale is ReentrancyGuard {
     address public admin;
     ERC20 public token;
@@ -85,11 +87,12 @@ contract Profitmaxpresale is ReentrancyGuard {
         address referrer;
         uint256 directReferrals;
         uint256[] levelIncomes;
+        uint256[] lastStakeUpdate;
         uint256 stakeTimestamp;
         uint256 lastUpdate;
         uint256 level;
         uint256 leafNo;
-        uint256 levelIncomeReceived;
+        uint256[] levelIncomeReceived;
         uint256 rewardPerMinute;
     }
 
@@ -217,15 +220,18 @@ contract Profitmaxpresale is ReentrancyGuard {
     function updateLevelIncome(address _user) public view returns (uint256) {
         User memory user = users[_user];
         uint256 totalReward;
-        // for (uint i = 0; i < user.level; i++) {
-        uint256 stakesTime = (block.timestamp - user.lastUpdate) / 60; // Per Minute
+        uint256 i = 1;
+        for (i = 0; i < user.level; i++) {}
+        uint256 stakesTime = 0;
+        if (user.lastStakeUpdate.length > 0)
+            stakesTime = (block.timestamp - user.lastStakeUpdate[i - 3]) / 60; // Per Minute
         if (stakesTime > 0) {
-            uint256 rewardPerMinute = user.rewardPerMinute;
+            uint256 rewardPerMinute = user.levelIncomes[i - 3];
             totalReward += (rewardPerMinute * stakesTime);
         }
-        totalReward += user.levelIncomeReceived;
+        if (user.levelIncomeReceived.length > 0)
+            totalReward += user.levelIncomeReceived[i];
         return totalReward;
-        // }
     }
 
     function updateLevelIncome(
@@ -234,24 +240,33 @@ contract Profitmaxpresale is ReentrancyGuard {
         address referrer
     ) internal {
         User storage user = users[referrer];
+        users[sender].referrer = referrer;
         users[sender].leafNo = user.leafNo + 1;
         if (user.level < 20) user.level++;
         uint256 rewardPerMinute = calculateRewardPerMinute(tokenAmount) / 60;
+
         for (uint i = user.leafNo; i > 0; i--) {
-            // uint256 reward = rewardPerMinute
-            User storage user1 = users[user.referrer];
-            uint256 level = user1.level;
-            uint256 lastUpdates = user1.lastUpdate;
-            if (user1.rewardPerMinute > 0) {
+            uint256 level = user.level;
+            uint256 lastUpdates = user.lastUpdate;
+            if (user.rewardPerMinute > 0) {
                 uint256 timeToMins = (block.timestamp - lastUpdates) / 60;
                 if (timeToMins > 0)
-                    user1.levelIncomeReceived +=
+                    user.levelIncomeReceived[i - 1] +=
                         timeToMins *
-                        user1.rewardPerMinute;
+                        user.rewardPerMinute;
             }
-            user1.lastUpdate = block.timestamp;
+            user.lastUpdate = block.timestamp;
+
             uint256 reward = (rewardPerMinute * levelPercentages[level]) / 1000;
-            users[user.referrer].rewardPerMinute += reward;
+            if (user.referrer != address(0)) {
+                if (i >= user.levelIncomes.length) {
+                    user.levelIncomes.push(reward);
+                    user.lastStakeUpdate.push(block.timestamp);
+                } else {
+                    user.levelIncomes[i - 1] += reward;
+                    user.lastStakeUpdate[i - 1] = block.timestamp;
+                }
+            }
             user = users[user.referrer];
         }
     }
@@ -907,5 +922,9 @@ contract Profitmaxpresale is ReentrancyGuard {
         address _user
     ) external view returns (UserStakes[] memory) {
         return userStakes[_user];
+    }
+
+    function getTimeNow() public view returns (uint256) {
+        return block.timestamp;
     }
 }
