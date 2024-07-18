@@ -221,20 +221,18 @@ contract Profitmaxpresale is ReentrancyGuard {
         User memory user = users[_user];
         uint256 totalReward;
         uint256 i = 1;
-        // console.log("User Level: ", user.level);
         for (i = 0; i < user.level; i++) {
             uint256 stakesTime = 0;
-
-            if (user.lastStakeUpdate.length > 1) {
+            if (
+                user.lastStakeUpdate.length > 0 &&
+                i < user.lastStakeUpdate.length
+            ) {
                 stakesTime = (block.timestamp - user.lastStakeUpdate[i]) / 60; // Per Minute
-            }
-
-            if (stakesTime > 1) {
-                uint256 rewardPerMinute = user.levelIncomes[i];
-                totalReward += (rewardPerMinute * stakesTime);
-            }
-            if (user.levelIncomeReceived.length > 1) {
-                totalReward += user.levelIncomeReceived[i];
+                if (stakesTime > 1) {
+                    uint256 rewardPerMinute = user.levelIncomes[i];
+                    totalReward += (rewardPerMinute * stakesTime);
+                    totalReward += user.levelIncomeReceived[i];
+                }
             }
         }
         return totalReward;
@@ -247,24 +245,38 @@ contract Profitmaxpresale is ReentrancyGuard {
     ) internal {
         User storage user = users[referrer];
         users[sender].referrer = referrer;
-        if (users[referrer].lastUpdate == 0) {
-            users[referrer].lastUpdate = block.timestamp;
+        if (user.lastUpdate == 0) {
+            user.lastUpdate = block.timestamp;
         }
         uint256 timeToMins;
         users[sender].leafNo = user.leafNo + 1;
         if (user.level < 20) user.level++;
-        uint256 rewardPerMinute = calculateRewardPerMinute(tokenAmount) / 60;
+        uint256 rewardPerMinute = calculateRewardPerMinute(tokenAmount);
         timeToMins = (block.timestamp - users[referrer].lastUpdate) / 60;
+        if (user.levelIncomeReceived.length == 0) {
+            user.levelIncomeReceived.push(
+                ((timeToMins * rewardPerMinute) * levelPercentages[0]) / 1000
+            );
+            user.lastStakeUpdate.push(block.timestamp);
 
-        user.levelIncomeReceived.push(
-            ((timeToMins * rewardPerMinute) * levelPercentages[0]) / 1000
-        );
+            user.levelIncomes.push(
+                (rewardPerMinute * levelPercentages[0]) / 1000
+            );
+        } else {
+            user.levelIncomeReceived[0] +=
+                ((timeToMins * rewardPerMinute) * levelPercentages[0]) /
+                1000;
+            user.lastStakeUpdate[0] = block.timestamp;
+            user.levelIncomes[0] +=
+                (rewardPerMinute * levelPercentages[0]) /
+                1000;
+        }
+
         user.lastUpdate = block.timestamp;
-        user.lastStakeUpdate.push(block.timestamp);
 
-        user.levelIncomes.push((rewardPerMinute * levelPercentages[0]) / 1000);
+        for (uint i = user.leafNo; i > 1; i--) {
+            user = users[user.referrer];
 
-        for (uint i = user.leafNo; i > 0; i--) {
             uint256 level = user.level;
             uint256 lastUpdates = user.lastUpdate;
             if (user.rewardPerMinute > 0) {
@@ -294,7 +306,6 @@ contract Profitmaxpresale is ReentrancyGuard {
                         user.rewardPerMinute;
                 }
             }
-            user = users[user.referrer];
         }
     }
 
@@ -683,86 +694,6 @@ contract Profitmaxpresale is ReentrancyGuard {
         // Implement your hourly reward calculation logic here
         return (_amount * _hours * 10) / 1000; // Example: 1% hourly reward
     }
-
-    // function updateLevelIncome(address _user) internal returns (uint256) {
-    //     User storage user = users[_user];
-
-    //     // Calculate the elapsed time since the last update
-    //     uint256 elapsedHours = (block.timestamp - user.lastUpdate) / 1 hours;
-    //     if (elapsedHours == 0) return 0;
-
-    //     // Calculate the hourly reward
-    //     uint256 hourlyReward = calculateHourlyReward(
-    //         user.stakedTokens,
-    //         elapsedHours
-    //     );
-
-    //     // Update the last update timestamp
-    //     user.lastUpdate = block.timestamp;
-
-    //     uint256 remainingReward = hourlyReward;
-    //     address currentReferrer = user.referrer;
-    //     uint256 level = 1;
-    //     uint256 reward;
-
-    //     while (
-    //         currentReferrer != address(0) && level <= 20 && remainingReward > 0
-    //     ) {
-    //         User storage referrer = users[currentReferrer];
-
-    //         if (referrer.directReferrals >= level) {
-    //             uint256 levelIncome = (hourlyReward *
-    //                 levelPercentages[level - 1]) / 1000;
-    //             referrer.levelIncomes.push(levelIncome);
-    //             remainingReward -= levelIncome;
-    //             reward += levelIncome;
-    //         }
-
-    //         currentReferrer = referrer.referrer;
-    //         level++;
-    //     }
-    //     return reward;
-    // }
-
-    // function getLevelIncome(address _user) public view returns (uint256) {
-    //     User storage user = users[_user];
-
-    //     // Calculate the elapsed time since the last update
-    //     uint256 elapsedHours = (block.timestamp - user.lastUpdate) / 1 hours;
-    //     if (elapsedHours == 0) return 0;
-
-    //     // Calculate the hourly reward
-    //     uint256 hourlyReward = calculateHourlyReward(
-    //         user.stakedTokens,
-    //         elapsedHours
-    //     );
-
-    //     // Update the last update timestamp
-    //     // user.lastUpdate = block.timestamp;
-
-    //     uint256 remainingReward = hourlyReward;
-    //     address currentReferrer = user.referrer;
-    //     uint256 level = 1;
-    //     uint256 reward;
-
-    //     while (
-    //         currentReferrer != address(0) && level <= 20 && remainingReward > 0
-    //     ) {
-    //         User storage referrer = users[currentReferrer];
-
-    //         if (referrer.directReferrals >= level) {
-    //             uint256 levelIncome = (hourlyReward *
-    //                 levelPercentages[level - 1]) / 1000;
-    //             referrer.levelIncomes.push(levelIncome);
-    //             remainingReward -= levelIncome;
-    //             reward += levelIncome;
-    //         }
-
-    //         currentReferrer = referrer.referrer;
-    //         level++;
-    //     }
-    //     return reward;
-    // }
 
     function setIndirectUsersRecursive(
         address _user,
