@@ -164,7 +164,7 @@ describe("Profitmaxpresale Contract", function () {
     await profitmaxpresale
       .connect(user4)
       .stakeTokens("100000000000000000000", user1.address);
-    // // //Fifth
+    // // // //Fifth
     // await token
     //   .connect(user5)
     //   .approve(profitmaxpresale.target, "5000000000000000000000");
@@ -207,7 +207,7 @@ describe("Profitmaxpresale Contract", function () {
     //   .connect(user9)
     //   .stakeTokens("100000000000000000000", user2.address);
 
-    await advanceTimeAndBlock(121);
+    await advanceTimeAndBlock(120);
     console.log(
       "User 1 Level Income : ",
       await profitmaxpresale.updateLevelIncome(user1.address),

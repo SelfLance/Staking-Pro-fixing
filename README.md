@@ -14,3 +14,5 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
 # Deploy on Sepoila Eth
 Token:  https://sepolia.etherscan.io/address/0x6eB2D3F3f10a662235D01B416E3fdc536f1032C1#code
 Staking: https://sepolia.etherscan.io/address/0xA7F445919CEf96820C39FEcEd5CCE46746DbF279#code
+# BSC_TESTNET
+https://testnet.bscscan.com/address/0x4Ffab9Db29f3b71bAf3E7ce2bbFCbFB60e6C6f9D#code
