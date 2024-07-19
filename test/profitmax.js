@@ -77,9 +77,9 @@ describe("Profitmaxpresale Contract", function () {
     expect(stakedAmount).to.equal("500000000000000000000");
   });
 
-  // function sleep(ms) {
-  //   return new Promise((resolve) => setTimeout(resolve, ms));
-  // }
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
   async function advanceTimeAndBlock(time) {
     await network.provider.send("evm_increaseTime", [time]);
     await network.provider.send("evm_mine");
@@ -150,27 +150,27 @@ describe("Profitmaxpresale Contract", function () {
     await profitmaxpresale
       .connect(user2)
       .stakeTokens("100000000000000000000", user1.address);
-    // Third
+    // // Third
     await token
       .connect(user3)
       .approve(profitmaxpresale.target, "5000000000000000000000");
     await profitmaxpresale
       .connect(user3)
       .stakeTokens("100000000000000000000", user1.address);
-    // // // // // Fourth
-    await token
-      .connect(user4)
-      .approve(profitmaxpresale.target, "5000000000000000000000");
-    await profitmaxpresale
-      .connect(user4)
-      .stakeTokens("100000000000000000000", user1.address);
-    // // // //Fifth
+    // // // // // // // Fourth
+    // await token
+    //   .connect(user4)
+    //   .approve(profitmaxpresale.target, "5000000000000000000000");
+    // await profitmaxpresale
+    //   .connect(user4)
+    //   .stakeTokens("100000000000000000000", user1.address);
+    // // // // //Fifth
     // await token
     //   .connect(user5)
     //   .approve(profitmaxpresale.target, "5000000000000000000000");
     // await profitmaxpresale
     //   .connect(user5)
-    //   .stakeTokens("100000000000000000000", user2.address);
+    //   .stakeTokens("100000000000000000000", user1.address);
     // // // Sixth
     // await token
     //   .connect(user6)
@@ -206,13 +206,19 @@ describe("Profitmaxpresale Contract", function () {
     // await profitmaxpresale
     //   .connect(user9)
     //   .stakeTokens("100000000000000000000", user2.address);
-
+    // sleep(70000);
     await advanceTimeAndBlock(120);
     console.log(
       "User 1 Level Income : ",
       await profitmaxpresale.updateLevelIncome(user1.address),
       user1.address
     );
+
+    // console.log(
+    //   "User 1 Level Income : ",
+    //   await profitmaxpresale.updateLevelIncome(user1.address),
+    //   user1.address
+    // );
 
     // console.log(
     //   "User 2 Level Income : ",
