@@ -4,8 +4,6 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "hardhat/console.sol";
-
 contract Profitmaxpresale is ReentrancyGuard {
     address public admin;
     ERC20 public token;
@@ -220,17 +218,9 @@ contract Profitmaxpresale is ReentrancyGuard {
     function updateLevelIncome(address _user) public view returns (uint256) {
         User memory user = users[_user];
         uint256 totalReward;
-        console.log(
-            "Block Time Stamp Calling Level: ",
-            block.timestamp,
-            user.lastUpdate,
-            block.timestamp - user.lastStakeUpdate[0]
-        );
-
         uint256 i = 1;
 
         for (i = 0; i < user.level; i++) {
-            console.log("User level inside getter: ", user.level, i);
             uint256 stakesTime = 0;
             if (
                 user.lastStakeUpdate.length > 0 &&
@@ -241,12 +231,6 @@ contract Profitmaxpresale is ReentrancyGuard {
                     uint256 rewardPerMinute = user.levelIncomes[i];
                     totalReward += (rewardPerMinute * stakesTime);
                     totalReward += user.levelIncomeReceived[i];
-                    console.log(
-                        "User level inside getter stakesTime: ",
-                        rewardPerMinute,
-                        stakesTime,
-                        user.levelIncomeReceived[i]
-                    );
                 }
             }
         }
@@ -268,12 +252,6 @@ contract Profitmaxpresale is ReentrancyGuard {
         if (user.level < 20) user.level++;
         uint256 rewardPerMinute = calculateRewardPerMinute(tokenAmount);
         timeToMins = (block.timestamp - users[referrer].lastUpdate) / 60;
-        console.log(
-            "Block Time Stamp Updateing Level: ",
-            block.timestamp,
-            rewardPerMinute,
-            timeToMins
-        );
         if (user.levelIncomeReceived.length == 0) {
             user.levelIncomeReceived.push(
                 ((timeToMins * rewardPerMinute) * levelPercentages[0]) / 1000
@@ -284,14 +262,6 @@ contract Profitmaxpresale is ReentrancyGuard {
                 (rewardPerMinute * levelPercentages[0]) / 1000
             );
         } else {
-            console.log(
-                "Its level Incomes: in Else: ",
-                user.lastStakeUpdate[0],
-                user.levelIncomes[0] +=
-                    (rewardPerMinute * levelPercentages[0]) /
-                    1000,
-                (rewardPerMinute * levelPercentages[0]) / 1000
-            );
             user.levelIncomeReceived[0] +=
                 ((timeToMins * rewardPerMinute) * levelPercentages[0]) /
                 1000;
@@ -302,11 +272,8 @@ contract Profitmaxpresale is ReentrancyGuard {
         }
 
         user.lastUpdate = block.timestamp;
-
         for (uint i = user.leafNo; i > 1; i--) {
             user = users[user.referrer];
-
-            uint256 level = user.level;
             uint256 lastUpdates = user.lastUpdate;
             if (user.rewardPerMinute > 0) {
                 timeToMins = (block.timestamp - lastUpdates) / 60;
@@ -317,14 +284,10 @@ contract Profitmaxpresale is ReentrancyGuard {
             }
             user.lastUpdate = block.timestamp;
 
-            uint256 reward = (rewardPerMinute * levelPercentages[level]) / 1000;
+            uint256 reward = (rewardPerMinute * levelPercentages[user.leafNo]) /
+                1000;
             if (user.referrer != address(0)) {
                 if (i >= user.levelIncomes.length) {
-                    console.log(
-                        "Its inside if condition:",
-                        i,
-                        user.levelIncomes.length
-                    );
                     user.levelIncomeReceived.push(
                         timeToMins * user.rewardPerMinute
                     );
@@ -333,7 +296,6 @@ contract Profitmaxpresale is ReentrancyGuard {
                     user.levelIncomes.push(reward);
                     user.lastStakeUpdate.push(block.timestamp);
                 } else {
-                    console.log("its inside condition of Else");
                     user.levelIncomes[i - 1] += reward;
                     user.lastStakeUpdate[i - 1] = block.timestamp;
                     user.levelIncomeReceived[i - 1] +=
@@ -342,11 +304,6 @@ contract Profitmaxpresale is ReentrancyGuard {
                 }
             }
         }
-        console.log(
-            "user.levelIncomes[0]",
-            user.levelIncomes[0],
-            user.levelIncomes.length
-        );
     }
 
     function calculateRewardPerMinute(
