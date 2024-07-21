@@ -133,7 +133,7 @@ describe("Profitmaxpresale Contract", function () {
     // expect(finalBalance).to.be.gt(initialBalance);
   });
 
-  it.only("Should Show  Direct Referer of 5 Users ", async function () {
+  it("Should Show  Direct Referer of 5 Users ", async function () {
     // First
     await token
       .connect(user1)
@@ -351,6 +351,13 @@ describe("Profitmaxpresale Contract", function () {
     await profitmaxpresale
       .connect(user2)
       .stakeTokens("100000000000000000000", user1.address);
+
+    await advanceTimeAndBlock(120);
+    console.log(
+      "User 1 Level Income after User2 Referrer: ",
+      await profitmaxpresale.updateLevelIncome(user1.address),
+      user1.address
+    );
     // // Third
     await token
       .connect(user3)
@@ -358,36 +365,42 @@ describe("Profitmaxpresale Contract", function () {
     await profitmaxpresale
       .connect(user3)
       .stakeTokens("100000000000000000000", user1.address);
+    await advanceTimeAndBlock(180);
+
     // // // // // // // Fourth
+    console.log(
+      "User 1 Level Income after User3 Referrer: ",
+      await profitmaxpresale.updateLevelIncome(user1.address),
+      user1.address
+    );
 
     await token
       .connect(user4)
       .approve(profitmaxpresale.target, "5000000000000000000000");
     await profitmaxpresale
       .connect(user4)
-      .stakeTokens("100000000000000000000", user1.address);
-
-    // await advanceTimeAndBlock(60);
-    // console.log(
-    //   "User 1 Level Income : ",
-    //   await profitmaxpresale.updateLevelIncome(user1.address),
-    //   user1.address
-    // );
-
-    // // // Eight
-    await token
-      .connect(user8)
-      .approve(profitmaxpresale.target, "5000000000000000000000");
-    await profitmaxpresale
-      .connect(user8)
       .stakeTokens("100000000000000000000", user2.address);
-    // // // //Fifth
+    await advanceTimeAndBlock(480);
+
+    console.log(
+      "User 1 Level Income after User2 Referrer indirectly: ",
+      await profitmaxpresale.updateLevelIncome(user1.address),
+      user1.address
+    );
+
     await token
       .connect(user5)
       .approve(profitmaxpresale.target, "5000000000000000000000");
     await profitmaxpresale
       .connect(user5)
       .stakeTokens("100000000000000000000", user1.address);
+    await advanceTimeAndBlock(1680);
+
+    console.log(
+      "User 1 Level Income : ",
+      await profitmaxpresale.updateLevelIncome(user1.address),
+      user1.address
+    );
 
     // // Sixth
     await token
@@ -396,11 +409,12 @@ describe("Profitmaxpresale Contract", function () {
     await profitmaxpresale
       .connect(user6)
       .stakeTokens("100000000000000000000", user1.address);
-    // console.log("Time Before Time out : ", await profitmaxpresale.getTimeNow());
-    // console.log(
-    //   "Its Reward before Time out: ",
-    //   await profitmaxpresale.updateLevelIncome(user1.address)
-    // );
+    // await advanceTimeAndBlock(1680);
+    console.log(
+      "Its Reward before Time out: ",
+      await profitmaxpresale.updateLevelIncome(user1.address)
+    );
+
     // // // // Seven
     // await token
     //   .connect(user7)
@@ -425,12 +439,12 @@ describe("Profitmaxpresale Contract", function () {
     //   .connect(user9)
     //   .stakeTokens("100000000000000000000", user2.address);
     // sleep(70000);
-    await advanceTimeAndBlock(60);
-    console.log(
-      "User 1 Level Income : ",
-      await profitmaxpresale.updateLevelIncome(user1.address),
-      user1.address
-    );
+    // await advanceTimeAndBlock(60);
+    // console.log(
+    //   "User 1 Level Income : ",
+    //   await profitmaxpresale.updateLevelIncome(user1.address),
+    //   user1.address
+    // );
 
     // console.log(
     //   "User 1 Level Income : ",
