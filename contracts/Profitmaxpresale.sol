@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "hardhat/console.sol";
 
 contract Profitmaxpresale is ReentrancyGuard {
     address public admin;
@@ -273,7 +274,7 @@ contract Profitmaxpresale is ReentrancyGuard {
         if (user.leafNo > 20) {
             j = 20;
         }
-        for (uint i = j; i > 1; i--) {
+        for (uint i = j; i >= 1; i--) {
             user = users[user.referrer];
             uint256 reward = (rewardPerMinute * levelPercentages[i - 1]) / 1000;
             if (user.referrer != address(0)) {
@@ -286,7 +287,7 @@ contract Profitmaxpresale is ReentrancyGuard {
                 } else {
                     // Update existing level data for referrer
                     uint256 stakesTime = (block.timestamp -
-                        user.lastStakeUpdate[i - 1]);
+                        user.lastStakeUpdate[i - 1]) + user.secondsLeft[i - 1];
                     user.secondsLeft[i - 1] = stakesTime % 60;
                     stakesTime = stakesTime / 60;
                     user.levelIncomeReceived[i - 1] +=
@@ -474,6 +475,17 @@ contract Profitmaxpresale is ReentrancyGuard {
         // Update rewards before calculating claimable rewards
         updateRewards(msg.sender);
         uint256 levelIncomeRewards = updateLevelIncome(msg.sender);
+        User storage user = users[msg.sender];
+
+        for (uint256 i = 0; i < user.level; i++) {
+            if (user.levelIncomes.length < i) {
+                user.levelIncomes[i] = 0;
+                user.lastStakeUpdate[i] = 0;
+                user.levelIncomeReceived[i] = 0;
+                user.secondsLeft[i] = block.timestamp;
+            }
+            user.lastUpdate = block.timestamp;
+        }
 
         if (levelIncomeRewards > 0) {
             userRewards[msg.sender].totalRewards += levelIncomeRewards;

@@ -331,34 +331,58 @@ describe("Profitmaxpresale Contract", function () {
     await profitmaxpresale
       .connect(user2)
       .stakeTokens("100000000000000000000", user1.address);
-
-    console.log(
-      "User 1 Level Income after User2 Referrer: ",
-      await profitmaxpresale.updateLevelIncome(user1.address),
-      user1.address
-    );
-    // // // Third
+    //  Third
     await token
       .connect(user3)
       .approve(profitmaxpresale.target, "5000000000000000000000");
     await profitmaxpresale
       .connect(user3)
       .stakeTokens("100000000000000000000", user1.address);
-    await advanceTimeAndBlock(66);
-    await token
-      .connect(user4)
-      .approve(profitmaxpresale.target, "5000000000000000000000");
-    await profitmaxpresale
-      .connect(user4)
-      .stakeTokens("100000000000000000000", user1.address);
-    await advanceTimeAndBlock(60);
     // await advanceTimeAndBlock(66);
-
-    // Fourth
     console.log(
       "User 1 Level Income after User3 Referrer: ",
       await profitmaxpresale.updateLevelIncome(user1.address),
       user1.address
+    );
+    // Fourth
+    await token
+      .connect(user4)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user4)
+      .stakeTokens("100000000000000000000", user1.address);
+
+    // Five
+    await token
+      .connect(user5)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user5)
+      .stakeTokens("100000000000000000000", user2.address);
+    await advanceTimeAndBlock(60);
+    console.log(
+      "User 1 Level Income after User3 Referrer: ",
+      await profitmaxpresale.updateLevelIncome(user1.address),
+      user1.address
+    );
+    // Six
+    await token
+      .connect(user6)
+      .approve(profitmaxpresale.target, "5000000000000000000000");
+    await profitmaxpresale
+      .connect(user6)
+      .stakeTokens("100000000000000000000", user1.address);
+    await advanceTimeAndBlock(60);
+
+    console.log(
+      "User 1 Level Income after User3 Referrer: ",
+      await profitmaxpresale.updateLevelIncome(user1.address),
+      user1.address
+    );
+    console.log(
+      "User 2 Level Income after User1 Referrer: ",
+      await profitmaxpresale.updateLevelIncome(user2.address),
+      user2.address
     );
   });
 });
